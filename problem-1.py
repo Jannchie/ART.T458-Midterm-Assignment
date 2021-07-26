@@ -1,9 +1,7 @@
+#%%
 import numpy as np
-from dataset import ds_4
+from dataset import ds_4, ds_5
 from matplotlib import pyplot as plt
-
-x, y = ds_4()
-lamb = 0.3
 
 
 def J(w):
@@ -17,48 +15,67 @@ def J(w):
 def grad(w):
   res = 2 * lamb * w
   for i in range(x.shape[0]):
-    res += (-y[i] * x[i] *
-            (1 - 1 / (1 + np.exp(-y[i] * np.dot(w.T, x[i]))))).reshape(4, 1)
+    res += (-y[i] * x[i] * (1 - 1 / (1 + np.exp(-y[i] * np.dot(w.T, x[i])))))
   return res
 
 
 def bgd():
-  lr = 0.02
-  w = np.random.rand(4, 1)
+  w = np.random.rand(4)
   loss_hist_batch = []
-  for _ in range(30):
+  for _ in range(100):
     loss = J(w)
     g = grad(w)
     w -= g * lr
-    loss_hist_batch.append(loss[0][0])
+    loss_hist_batch.append(loss)
   return loss_hist_batch
 
 
+def get_h(w):
+  res = 2 * lamb * np.eye(4)
+  for i in range(x.shape[0]):
+    e = np.exp(-y[i] * np.dot(w.T, x[i]))
+    res += y[i]**2 * e / (1 + e)**2 * np.dot(x[i], x[i].T)
+  return res
+
+
 def newton():
-  alpha = 0.02
-  w = np.random.rand(4, 1)
+  w = np.random.rand(4)
   loss_list = []
-  for _ in range(30):
+  for _ in range(100):
     loss = J(w)
     g = grad(w)
-    h = get_hessian(w)
-    w -= alpha * np.dot(np.linalg.inv(h), g)
-    loss_list.append(loss[0][0])
+    h = get_h(w)
+    w -= lr * np.dot(np.linalg.inv(h), g)
+    loss_list.append(loss)
   return loss_list
 
 
-def get_hessian(w):
-  hessian = 2 * lamb * np.eye(4)
-  for i in range(x.shape[0]):
-    e = np.exp(-y[i] * np.dot(w.T, x[i]))
-    hessian += y[i]**2 * e / (1 + e)**2 * np.dot(x[i], x[i].T)
-  return hessian
+#%%
 
 
-loss_hist_batch = bgd()
-loss_newton_batch = newton()
+def problem_1_2(x, y):
+  loss_hist_batch = bgd()
+  loss_newton_batch = newton()
+  best = loss_newton_batch[-1] if loss_newton_batch[-1] < loss_hist_batch[
+      -1] else loss_hist_batch[-1]
+  lh = loss_hist_batch - best
+  ln = loss_newton_batch - best
+  plt.plot(lh, label="BGD")
+  plt.plot(ln, label="Newton")
+  plt.semilogy()
+  plt.legend()
+  plt.show()
 
-plt.plot(loss_hist_batch)
-plt.plot(loss_newton_batch)
-plt.semilogy()
-plt.show()
+
+# %%
+lamb = 0.05
+lr = 0.01
+
+# %%
+x, y = ds_4()
+problem_1_2(x, y)
+# %%
+lamb = 1
+x, y = ds_5()
+problem_1_2(x, y)
+# %%
